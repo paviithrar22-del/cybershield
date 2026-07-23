@@ -670,48 +670,11 @@
     <!-- Logic Script -->
     <script>
         // Initial Mock Data
-        let scanned = 127;
-        let flagged = 4;
+        let scanned = 0;
+        let flagged = 0;
         let sensitivity = 'Medium';
 
-        let incidents = [
-            {
-                id: 1,
-                sender: "ToxicUser99",
-                source: "Snapchat",
-                message: "you are so ugly go away and kill yourself",
-                severity: "CRITICAL",
-                reason: "Direct self-harm encouragement & high-severity insults.",
-                timestamp: Date.now() - 3600000 * 2
-            },
-            {
-                id: 2,
-                sender: "BullyBoy",
-                source: "WhatsApp",
-                message: "i hate you and everyone at school thinks you are worthless",
-                severity: "HIGH",
-                reason: "Severe social exclusion language and harassment.",
-                timestamp: Date.now() - 3600000 * 4
-            },
-            {
-                id: 3,
-                sender: "RandomAcct",
-                source: "Instagram",
-                message: "you are a complete stupid loser",
-                severity: "MEDIUM",
-                reason: "Insulting and derogatory name-calling.",
-                timestamp: Date.now() - 3600000 * 12
-            },
-            {
-                id: 4,
-                sender: "Annoyer",
-                source: "SMS",
-                message: "go away stop talking to us",
-                severity: "LOW",
-                reason: "Mild exclusion / annoyance markers.",
-                timestamp: Date.now() - 3600000 * 24
-            }
-        ];
+        let incidents = [];
 
         // Bullying classification database
         const keywords = {

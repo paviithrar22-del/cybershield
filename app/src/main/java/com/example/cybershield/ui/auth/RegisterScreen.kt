@@ -301,7 +301,6 @@ fun RegisterScreen(
                                                 put("phone", phoneTrim)
                                             }
                                         }
-                                        AppSettings.getInstance(context).guardianName = nameTrim
                                         Toast.makeText(context, "Registration successful! Verification email sent.", Toast.LENGTH_LONG).show()
                                         onLoginClick()
                                     } catch (e: Exception) {

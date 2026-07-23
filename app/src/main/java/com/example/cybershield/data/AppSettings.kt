@@ -139,4 +139,10 @@ class AppSettings private constructor(context: Context) {
         totalScanned = 0
         totalFlagged = 0
     }
+
+    fun clearAll() {
+        sharedPreferences.edit().clear().apply()
+        _totalScannedFlow.value = 0
+        _totalFlaggedFlow.value = 0
+    }
 }

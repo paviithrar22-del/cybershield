@@ -31,3 +31,13 @@ supabase/.temp/
 # Kotlin compiler directories
 .kotlin/
 
+# E2E Reports and JSON outputs
+**/website/*.xlsx
+**/mobile/report/
+**/backend/*.xlsx
+**/load_testing/
+**/e2e_results.json
+**/security_results.json
+**/load_stats.json
+**/summary_dashboard.md
+

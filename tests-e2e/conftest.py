@@ -36,11 +36,16 @@ class MockElement:
 class MockWebDriver:
     def __init__(self):
         self.title = "CyberShield | Real-time Bullying Protection Dashboard"
-        self.current_url = "file:///c:/Users/dines/Downloads/project%2012k/cybershield_demo.html"
+        import os
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.current_url = "file:///" + os.path.join(project_root, "cybershield_demo.html").replace("\\", "/")
         self.page_source = "<html>Mock CyberShield HTML</html>"
 
     def get(self, url):
-        pass
+        if "cybershield_demo.html" in url:
+            import os
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.current_url = "file:///" + os.path.join(project_root, "cybershield_demo.html").replace("\\", "/")
 
     def find_element(self, by, value):
         return MockElement(text="Mocked Element")
@@ -88,8 +93,6 @@ def browser(request):
     dry_run = request.config.getoption("--dry-run")
     if dry_run:
         driver = MockWebDriver()
-        yield driver
-        driver.quit()
     else:
         from selenium import webdriver
         from selenium.webdriver.chrome.service import Service
@@ -98,8 +101,19 @@ def browser(request):
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         driver = webdriver.Chrome(options=options)
-        yield driver
-        driver.quit()
+
+    # Override get method to resolve path dynamically
+    import os
+    original_get = driver.get
+    def dynamic_get(url):
+        if "cybershield_demo.html" in url:
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            url = "file:///" + os.path.join(project_root, "cybershield_demo.html").replace("\\", "/")
+        return original_get(url)
+    driver.get = dynamic_get
+
+    yield driver
+    driver.quit()
 
 @pytest.fixture(scope="function")
 def mobile_device(request):

@@ -2041,6 +2041,11 @@ fun SettingsDashboard(viewModel: MainScreenViewModel, onNavigate: (String) -> Un
                 onClick = {
                     scope.launch {
                         try {
+                            // Clear local incident database
+                            com.example.cybershield.data.IncidentDatabaseHelper.getInstance(context).clearAllIncidents()
+                            // Reset and clear local settings and stats
+                            com.example.cybershield.data.AppSettings.getInstance(context).clearAll()
+                            // Perform session sign out
                             com.example.cybershield.data.SupabaseManager.getInstance().signOut()
                             Toast.makeText(context, "Signed out successfully", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
