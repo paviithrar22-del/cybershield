@@ -368,7 +368,20 @@ The full test report files are uploaded as part of this workflow run and can be 
     # Write to local file for validation
     with open("summary_dashboard.md", "w", encoding="utf-8") as f:
         f.write(markdown_summary)
-    print("\n[SUCCESS] Consolidated report generated: summary_dashboard.md")
+        
+    total_passed = web_passed + mobile_passed
+    total_scanned = web_total + mobile_total
+    total_duration = web_duration + mobile_duration
+    pass_rate = (total_passed / total_scanned * 100) if total_scanned > 0 else 0
+    
+    print(f"\nSuite Execution Finished. Duration: {total_duration:.2f}s. Passed: {total_passed}/{total_scanned} ({pass_rate:.2f}%)")
+    print("Writing reports...")
+    print(f"Excel report generated: {os.path.abspath(web_report_path)}")
+    print(f"Excel report generated: {os.path.abspath(mobile_report_path)}")
+    print(f"Excel report generated: {os.path.abspath(sec_report_path)}")
+    print(f"Excel report generated: {os.path.abspath(load_report_path)}")
+    print(f"Reports written to: {os.path.dirname(os.path.abspath(web_report_path))}")
+    print(f"Pass rate: {pass_rate:.2f}% ({total_passed}/{total_scanned})")
     
     # Write to GITHUB_STEP_SUMMARY if active
     summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
