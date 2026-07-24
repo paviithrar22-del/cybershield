@@ -1,4 +1,4 @@
-name: HealthSense Unified E2E & Security Test Verification
+name: CyberShield Unified E2E & Security Test Verification
 
 on:
   push:
@@ -22,8 +22,8 @@ jobs:
           fi
           echo "Deployment Verification Successful: cybershield_demo.html is present."
 
-  run_backend_api_tests:
-    name: Run Backend API Tests
+  run_backend_security_scan:
+    name: Run Backend Security Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -37,13 +37,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas openpyxl pytest Appium-Python-Client selenium
+          pip install -r tests-e2e/requirements.txt
 
-      - name: Run Security Scanner
+      - name: Run static security scanner against the real Android source tree
         run: |
-          python tests-e2e/security_scanner.py > security_output.log
-          # Run python scan programmatically to output findings JSON
-          python -c "import json; import sys; sys.path.append('tests-e2e'); import security_scanner; findings, counts = security_scanner.scan_android_project(); print(json.dumps({'findings': findings, 'counts': counts}))" > security_results.json
+          python -c "import json, sys; sys.path.append('tests-e2e'); import security_scanner; findings, counts = security_scanner.scan_android_project(root_path='.'); print(json.dumps({'findings': findings, 'counts': counts}))" > security_results.json
+          cat security_results.json
 
       - name: Upload Security Results
         uses: actions/upload-artifact@v4
@@ -61,12 +60,11 @@ jobs:
       - name: Build / Check Web Files
         run: |
           echo "Building/Verifying frontend static bundle..."
-          # Do a HTML formatting/syntax check or simple validation
           grep -q "<title>CyberShield" cybershield_demo.html || exit 1
           echo "Frontend build verification successful!"
 
-  run_api_load_tests:
-    name: Run API Load Tests
+  run_api_load_test:
+    name: Run API Load Test (real Supabase Edge Function)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -77,9 +75,13 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Run API Load Test
+      - name: Run real load test against the deployed classify-message function
+        # Hits the project's actual production Supabase Edge Function (which calls the real
+        # Gemini API), not a local mock server. load_tester.py's defaults are deliberately
+        # modest since every request is a real, potentially billed API call.
         run: |
-          python -c "import json; import sys; sys.path.append('tests-e2e'); import load_tester; stats = load_tester.execute(); print(json.dumps(stats))" > load_stats.json
+          python -c "import json, sys; sys.path.append('tests-e2e'); import load_tester; stats = load_tester.execute(); print(json.dumps(stats))" > load_stats.json
+          cat load_stats.json
 
       - name: Upload Load Stats Results
         uses: actions/upload-artifact@v4
@@ -87,39 +89,10 @@ jobs:
           name: load-stats-results
           path: load_stats.json
 
-  run_selenium_e2e_tests:
-    name: Run Selenium E2E Tests
+  run_web_e2e_tests:
+    name: Run Web E2E Tests (real headless Chrome)
     runs-on: ubuntu-latest
     needs: verify_deployment
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Selenium & Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pandas openpyxl pytest Appium-Python-Client selenium
-
-      - name: Run E2E Test Suite (Headless Chrome & Mock Appium)
-        run: |
-          # We run pytest using run_tests.py with dry-run since Appium is not active in standard GitHub runner
-          python -c "import json; import sys; sys.path.append('tests-e2e'); import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'tests-e2e/test_web.py', 'tests-e2e/test_mobile.py', '--dry-run'], plugins=[c]); print(json.dumps(c.results))" > e2e_results.json
-
-      - name: Upload E2E Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-results
-          path: e2e_results.json
-
-  consolidate_verify_reports:
-    name: Consolidate & Verify Reports
-    runs-on: ubuntu-latest
-    needs: [run_backend_api_tests, run_frontend_build, run_api_load_tests, run_selenium_e2e_tests]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -132,7 +105,102 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas openpyxl pytest Appium-Python-Client selenium
+          pip install -r tests-e2e/requirements.txt
+
+      - name: Run Selenium E2E Suite against the real page in headless Chrome
+        run: |
+          cd tests-e2e
+          python -c "import json, sys; import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'test_web.py'], plugins=[c]); print(json.dumps(c.results))" > ../web_e2e_results.json
+
+      - name: Upload Web E2E Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-e2e-results
+          path: web_e2e_results.json
+
+  run_mobile_e2e_tests:
+    name: Run Mobile E2E Tests (real Android emulator)
+    runs-on: ubuntu-latest
+    needs: verify_deployment
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests-e2e/requirements.txt
+
+      - name: Set up Node.js for Appium
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Appium + UiAutomator2 driver
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+
+      - name: Enable KVM for hardware-accelerated emulation
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Build debug APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+
+      - name: Run Appium E2E Suite on a real Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            appium --address 127.0.0.1 --port 4723 > appium_server.log 2>&1 &
+            sleep 8
+            cd tests-e2e
+            python -c "import json, sys; import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'test_mobile.py'], plugins=[c]); print(json.dumps(c.results))" > ../mobile_e2e_results.json
+
+      - name: Upload Mobile E2E Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-e2e-results
+          path: mobile_e2e_results.json
+
+  consolidate_verify_reports:
+    name: Consolidate & Verify Reports
+    runs-on: ubuntu-latest
+    needs: [run_backend_security_scan, run_frontend_build, run_api_load_test, run_web_e2e_tests, run_mobile_e2e_tests]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests-e2e/requirements.txt
 
       - name: Download Security Results
         uses: actions/download-artifact@v4
@@ -144,15 +212,22 @@ jobs:
         with:
           name: load-stats-results
 
-      - name: Download E2E Results
+      - name: Download Web E2E Results
         uses: actions/download-artifact@v4
         with:
-          name: e2e-results
+          name: web-e2e-results
+
+      - name: Download Mobile E2E Results
+        uses: actions/download-artifact@v4
+        with:
+          name: mobile-e2e-results
 
       - name: Run Consolidation Script
         run: |
-          # Running consolidate_reports.py which will read downloaded JSON files and compile into summary
-          python tests-e2e/consolidate_reports.py
+          cp security_results.json load_stats.json web_e2e_results.json mobile_e2e_results.json tests-e2e/
+          cd tests-e2e
+          python consolidate_reports.py
+          mv website mobile backend load_testing summary_dashboard.md ..
 
       - name: Upload Website E2E Report
         uses: actions/upload-artifact@v4
@@ -177,3 +252,7 @@ jobs:
         with:
           name: load-testing-report
           path: load_testing/*.xlsx
+
+      - name: Write summary to GitHub Actions
+        if: always()
+        run: cat summary_dashboard.md >> "$GITHUB_STEP_SUMMARY"

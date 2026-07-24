@@ -39,22 +39,32 @@ def scan_android_project(root_path=".."):
                 "strategy": "Set android:usesCleartextTraffic to false to block cleartext HTTP traffic and enforce HTTPS."
             })
             
-        # Check exported components without permissions
-        exported_matches = re.finditer(r'<(activity|service|receiver)[^>]*android:exported="true"[^>]*>', manifest_content)
-        for match in exported_matches:
-            tag_content = match.group(0)
-            if 'android:permission="' not in tag_content:
-                # Get component name
-                name_match = re.search(r'android:name="([^"]+)"', tag_content)
-                comp_name = name_match.group(1) if name_match else "Unknown Component"
-                findings.append({
-                    "area": "Security",
-                    "standard": "OWASP MASVS / Platform",
-                    "risk": "CRITICAL",
-                    "finding": f"Exported Component without Permission: {comp_name.split('.')[-1]}",
-                    "file": "AndroidManifest.xml",
-                    "strategy": f"Secure component {comp_name} by defining custom permissions or changing android:exported to false."
-                })
+        # Check exported components without permissions. Full component blocks (open tag
+        # through matching close tag) are matched, not just the open tag, so LAUNCHER
+        # activities can be recognized and excluded below.
+        component_blocks = re.finditer(
+            r'<(activity|service|receiver)\b([^>]*android:exported="true"[^>]*)(/>|>.*?</\1>)',
+            manifest_content, re.DOTALL
+        )
+        for match in component_blocks:
+            open_attrs = match.group(2)
+            full_block = match.group(0)
+            if 'android:permission="' in open_attrs:
+                continue
+            # A LAUNCHER activity is conventionally exported with no custom permission -
+            # that's required for the OS to start it, not a real vulnerability.
+            if 'android.intent.category.LAUNCHER' in full_block:
+                continue
+            name_match = re.search(r'android:name="([^"]+)"', open_attrs)
+            comp_name = name_match.group(1) if name_match else "Unknown Component"
+            findings.append({
+                "area": "Security",
+                "standard": "OWASP MASVS / Platform",
+                "risk": "CRITICAL",
+                "finding": f"Exported Component without Permission: {comp_name.split('.')[-1]}",
+                "file": "AndroidManifest.xml",
+                "strategy": f"Secure component {comp_name} by defining custom permissions or changing android:exported to false."
+            })
 
     # 2. Source Code Analysis (Kotlin Files)
     for root, dirs, files in os.walk(os.path.join(app_src, "java")):
@@ -116,17 +126,6 @@ def scan_android_project(root_path=".."):
                         "file": rel_path,
                         "strategy": "Verify that the notification service filters events carefully and restricts dispatch buffers to secure receivers."
                     })
-
-    # Fallback findings if the codebase has 0 findings (to avoid empty dashboard)
-    if not findings:
-        findings.append({
-            "area": "Security",
-            "standard": "OWASP MASVS / General Protection",
-            "risk": "LOW",
-            "finding": "Standard Proguard Rules Check",
-            "file": "build.gradle.kts",
-            "strategy": "Ensure Proguard/R8 obfuscation is enabled in the release build block."
-        })
 
     # Count severities
     severity_counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}

@@ -85,6 +85,9 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation("androidx.compose.material:material-icons-core")
   
+  // Encrypted local storage for guardian contact info and API keys
+  implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
   // Supabase & Ktor
   implementation(platform("io.github.jan-tennert.supabase:bom:3.6.0"))
   implementation("io.github.jan-tennert.supabase:postgrest-kt")

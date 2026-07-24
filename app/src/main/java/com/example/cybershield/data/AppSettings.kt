@@ -2,6 +2,8 @@ package com.example.cybershield.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,7 +46,20 @@ class AppSettings private constructor(context: Context) {
         }
     }
 
-    private val sharedPreferences: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    // Guardian contact info and the user's Gemini API key are sensitive - stored via
+    // EncryptedSharedPreferences (AES256-GCM values, AES256-SIV keys) backed by a
+    // hardware-attested master key, instead of plain, human-readable SharedPreferences XML.
+    private val masterKey = MasterKey.Builder(context)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
+
+    private val sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
+        context,
+        PREFS_NAME,
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
 
     // Flow for real-time stats updates
     private val _totalScannedFlow = MutableStateFlow(totalScanned)

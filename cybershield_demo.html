@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self';">
     <title>CyberShield | Real-time Bullying Protection Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -723,9 +724,9 @@
 
             list.innerHTML = incidents.map(inc => {
                 let badgeClass = `badge-${inc.severity.toLowerCase()}`;
-                let initials = inc.sender.substring(0, 2).toUpperCase();
+                let initials = escapeHtml(inc.sender.substring(0, 2).toUpperCase());
                 let time = new Date(inc.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
+
                 // Color mapping for avatar
                 let color = "var(--cyan-accent)";
                 if (inc.severity === "CRITICAL") color = "var(--rose-accent)";
@@ -738,8 +739,8 @@
                             <div class="sender-info">
                                 <div class="avatar" style="background: rgba(255,255,255,0.05); color: ${color}; border: 1px solid ${color}">${initials}</div>
                                 <div>
-                                    <div class="sender-name">${inc.sender}</div>
-                                    <div class="app-name">${inc.source}</div>
+                                    <div class="sender-name">${escapeHtml(inc.sender)}</div>
+                                    <div class="app-name">${escapeHtml(inc.source)}</div>
                                 </div>
                             </div>
                             <div>
@@ -747,11 +748,17 @@
                                 <div class="time-text">${time}</div>
                             </div>
                         </div>
-                        <div class="message-box">"${inc.message}"</div>
+                        <div class="message-box">"${escapeHtml(inc.message)}"</div>
                         <div class="reason-text">Reason: ${inc.reason}</div>
                     </div>
                 `;
             }).join('');
+        }
+
+        function escapeHtml(value) {
+            const div = document.createElement('div');
+            div.textContent = value;
+            return div.innerHTML;
         }
 
         function simulateAlert() {

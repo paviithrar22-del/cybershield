@@ -49,35 +49,52 @@ Example outputs:
 {"severity": "CRITICAL", "reason": "Contains direct physical threat in Tamil"}
 {"severity": "NONE", "reason": "No harmful content detected"}`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
 
-    const response = await fetch(geminiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
+    const geminiBody = JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt,
+            },
+          ],
         },
-      }),
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API call failed: ${errorText}`);
+    // Only retry on 503 (model temporarily overloaded) - that's a genuinely transient,
+    // safe-to-retry condition. 429 is NOT retried: on the Gemini free tier it can mean
+    // either a short per-minute rate limit OR a hard per-day quota (e.g.
+    // "GenerateRequestsPerDayPerProjectPerModel-FreeTier"), and retrying against an
+    // exhausted daily quota only burns through it faster without ever succeeding.
+    const maxAttempts = 3;
+    let response: Response | undefined;
+    let lastErrorText = "";
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      response = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: geminiBody,
+      });
+
+      if (response.ok) break;
+
+      lastErrorText = await response.text();
+      const retryable = response.status === 503;
+      if (!retryable || attempt === maxAttempts) {
+        throw new Error(`Gemini API call failed: ${lastErrorText}`);
+      }
+
+      const backoffMs = 500 * 2 ** (attempt - 1); // 500ms, 1s, 2s
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
     }
 
-    const geminiData = await response.json();
+    const geminiData = await response!.json();
     const resultText: string = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
     // Parse the response

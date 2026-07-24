@@ -37,7 +37,12 @@ supabase/.temp/
 **/backend/*.xlsx
 **/load_testing/
 **/e2e_results.json
+**/web_e2e_results.json
+**/mobile_e2e_results.json
 **/security_results.json
 **/load_stats.json
 **/summary_dashboard.md
+**/cybershield_test_analysis.xlsx
+**/window_dump*.xml
+**/mobile_full_run*.log
 

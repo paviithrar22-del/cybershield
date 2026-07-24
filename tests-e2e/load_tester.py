@@ -1,5 +1,3 @@
-import http.server
-import socketserver
 import threading
 import time
 import urllib.request
@@ -7,101 +5,89 @@ import urllib.error
 import json
 import statistics
 
-# A simple mock server to handle incoming load test requests
-class LoadTestRequestHandler(http.server.BaseHTTPRequestHandler):
-    def log_message(self, format, *args):
-        # Suppress logging to stdout during load tests
-        pass
+# Real target: the project's actual deployed Supabase Edge Function, which calls the real
+# Gemini API on every request. This used to spin up a local mock HTTP server and load-test
+# that instead - meaning the "API load test" never touched the real backend at all.
+#
+# The connected Google Cloud project's Gemini free tier caps generate_content calls for
+# this model at 20 requests/day, project-wide (confirmed via a real 429 RESOURCE_EXHAUSTED
+# response: "GenerateRequestsPerDayPerProjectPerModel-FreeTier", limit 20). Defaults here
+# are kept well under that so a single test run doesn't consume the whole day's quota by
+# itself - raise them only once billing is enabled on that Google Cloud project.
+SUPABASE_URL = "https://rkzrhiwxbypqfttoczzj.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_Gk6mjuBLJAwNejBarnDzSw_zT2ITHy5"
+CLASSIFY_ENDPOINT = f"{SUPABASE_URL}/functions/v1/classify-message"
 
-    def do_POST(self):
-        # Simulate processing time
-        time.sleep(0.01)  # 10ms processing latency
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        response = {"status": "success", "message": "Classified successfully"}
-        self.wfile.write(json.dumps(response).encode("utf-8"))
+SAMPLE_MESSAGES = [
+    "Please stop bullying me.",
+    "You are worthless and should just go away.",
+    "Hey, want to hang out after school?",
+    "I hate you, everyone hates you too.",
+    "Great job on the project today!",
+]
 
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps({"status": "healthy"}).encode("utf-8"))
 
-class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    pass
+def run_load_test(url=CLASSIFY_ENDPOINT, concurrency=2, total_requests=6):
+    """Send real concurrent HTTPS requests to the live classify-message Edge Function."""
+    print(f"Starting real load test to {url} with concurrency={concurrency}, total_requests={total_requests}...")
 
-def start_server(port=8089):
-    handler = LoadTestRequestHandler
-    server = ThreadingTCPServer(("127.0.0.1", port), handler)
-    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
-    server_thread.start()
-    return server
-
-def run_load_test(url="http://127.0.0.1:8089", concurrency=100, total_requests=1000):
-    """
-    Executes a real load test by sending concurrent HTTP requests.
-    """
-    print(f"Starting real load test to {url} with concurrency={concurrency}...")
-    
     latencies = []
     errors = 0
     success = 0
-    
-    def worker():
+    lock = threading.Lock()
+
+    def run_thread_requests(count, start_index):
         nonlocal errors, success
-        # Send requests under the target total count
-        while True:
-            # Atomic check-and-increment or exit
-            # We will just distribute requests evenly across threads
-            pass
-            
-    # To run a clean and simple concurrent loop:
-    threads = []
-    reqs_per_thread = total_requests // concurrency
-    
-    start_time = time.time()
-    
-    def run_thread_requests(count):
-        nonlocal errors, success
-        for _ in range(count):
+        for i in range(count):
             t0 = time.time()
             try:
-                # Send POST request
-                data = json.dumps({"message": "Please stop bullying me."}).encode("utf-8")
+                message = SAMPLE_MESSAGES[(start_index + i) % len(SAMPLE_MESSAGES)]
+                data = json.dumps({"text": message}).encode("utf-8")
                 req = urllib.request.Request(
-                    url, 
-                    data=data, 
-                    headers={'Content-Type': 'application/json'},
-                    method='POST'
+                    url,
+                    data=data,
+                    headers={
+                        "Content-Type": "application/json",
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+                    },
+                    method="POST",
                 )
-                with urllib.request.urlopen(req, timeout=2.0) as response:
-                    if response.status == 200:
-                        success += 1
-                    else:
-                        errors += 1
-            except Exception as e:
-                errors += 1
+                with urllib.request.urlopen(req, timeout=15.0) as response:
+                    body = json.loads(response.read().decode("utf-8"))
+                    with lock:
+                        if response.status == 200 and "severity" in body:
+                            success += 1
+                        else:
+                            errors += 1
+            except Exception:
+                with lock:
+                    errors += 1
             finally:
-                latencies.append((time.time() - t0) * 1000) # In ms
-                
+                with lock:
+                    latencies.append((time.time() - t0) * 1000)  # ms
+
+    reqs_per_thread = max(total_requests // concurrency, 1)
+    threads = []
+    start_time = time.time()
+
     for i in range(concurrency):
-        t = threading.Thread(target=run_thread_requests, args=(reqs_per_thread,))
+        t = threading.Thread(target=run_thread_requests, args=(reqs_per_thread, i * reqs_per_thread))
         threads.append(t)
         t.start()
-        
+
     for t in threads:
         t.join()
-        
+
     total_duration = time.time() - start_time
-    
+
     if not latencies:
         latencies = [0]
-        
+
     mean_latency = statistics.mean(latencies)
     p95_latency = sorted(latencies)[int(len(latencies) * 0.95)] if len(latencies) > 1 else latencies[0]
     throughput = len(latencies) / total_duration if total_duration > 0 else 0
-    
+
     stats = {
         "concurrency": concurrency,
         "total_requests": len(latencies),
@@ -110,22 +96,15 @@ def run_load_test(url="http://127.0.0.1:8089", concurrency=100, total_requests=1
         "duration_s": round(total_duration, 2),
         "mean_latency_ms": round(mean_latency, 2),
         "p95_latency_ms": round(p95_latency, 2),
-        "throughput_req_sec": round(throughput, 2)
+        "throughput_req_sec": round(throughput, 2),
     }
-    
+
     return stats
 
+
 def execute():
-    port = 8089
-    server = start_server(port)
-    try:
-        # Give server a tiny moment to start
-        time.sleep(0.5)
-        stats = run_load_test(f"http://127.0.0.1:{port}", concurrency=50, total_requests=500)
-        return stats
-    finally:
-        server.shutdown()
-        server.server_close()
+    return run_load_test()
+
 
 if __name__ == "__main__":
     results = execute()

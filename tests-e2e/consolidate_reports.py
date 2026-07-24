@@ -203,29 +203,36 @@ def main():
     
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
     
-    # Check for E2E Results
-    e2e_data = load_json_file("e2e_results.json")
-    if e2e_data is not None:
-        print("\nFound pre-executed E2E results. Loading from file...")
-        web_results = [r for r in e2e_data if r["platform"] == "Web"]
-        mobile_results = [r for r in e2e_data if r["platform"] == "Mobile"]
+    # Check for pre-executed results, written by separate CI jobs (web runs on the GitHub
+    # runner's own Chrome; mobile runs against a real Android emulator/device in its own job).
+    # Falls back to the older combined e2e_results.json name for compatibility.
+    web_data = load_json_file("web_e2e_results.json") or load_json_file("e2e_results.json")
+    mobile_data = load_json_file("mobile_e2e_results.json") or load_json_file("e2e_results.json")
+
+    if web_data is not None:
+        print("\nFound pre-executed Web E2E results. Loading from file...")
+        web_results = [r for r in web_data if r.get("platform") == "Web"] if isinstance(web_data, list) else web_data
     else:
-        # 1. RUN WEB TESTS
         print("\n[1/4] Running Web E2E Tests (Selenium Live)...")
         web_collector = ResultCollectorPlugin()
         pytest.main(["-v", "test_web.py"], plugins=[web_collector])
         web_results = web_collector.results
-        
-        # 2. RUN MOBILE TESTS
+
+    if mobile_data is not None:
+        print("\nFound pre-executed Mobile E2E results. Loading from file...")
+        mobile_results = [r for r in mobile_data if r.get("platform") == "Mobile"] if isinstance(mobile_data, list) else mobile_data
+    else:
         appium_active = check_appium_status()
-        print(f"\n[2/4] Running Mobile E2E Tests (Appium | Connected Device: {appium_active})...")
-        mobile_collector = ResultCollectorPlugin()
-        mobile_args = ["-v", "test_mobile.py"]
-        if not appium_active:
-            mobile_args.append("--dry-run")
-        pytest.main(mobile_args, plugins=[mobile_collector])
-        mobile_results = mobile_collector.results
-        
+        if appium_active:
+            print("\n[2/4] Running Mobile E2E Tests (Appium | real connected device)...")
+            mobile_collector = ResultCollectorPlugin()
+            pytest.main(["-v", "test_mobile.py"], plugins=[mobile_collector])
+            mobile_results = mobile_collector.results
+        else:
+            print("\n[2/4] No Appium server reachable and no pre-executed mobile results found - "
+                  "skipping mobile E2E rather than substituting mocked results.")
+            mobile_results = []
+
     # Generate Web Excel
     web_report_path = f"website/E2E_Test_Report_Healthsense AI_{timestamp}.xlsx"
     generate_excel_report(web_results, web_report_path)
