@@ -41,7 +41,7 @@ jobs:
 
       - name: Run static security scanner against the real Android source tree
         run: |
-          python -c "import json, sys; sys.path.append('tests-e2e'); import security_scanner; findings, counts = security_scanner.scan_android_project(root_path='.'); print(json.dumps({'findings': findings, 'counts': counts}))" > security_results.json
+          python -c "import json, sys; sys.path.append('tests-e2e'); import security_scanner; findings, counts = security_scanner.scan_android_project(root_path='.'); json.dump({'findings': findings, 'counts': counts}, open('security_results.json', 'w'))"
           cat security_results.json
 
       - name: Upload Security Results
@@ -80,7 +80,7 @@ jobs:
         # Gemini API), not a local mock server. load_tester.py's defaults are deliberately
         # modest since every request is a real, potentially billed API call.
         run: |
-          python -c "import json, sys; sys.path.append('tests-e2e'); import load_tester; stats = load_tester.execute(); print(json.dumps(stats))" > load_stats.json
+          python -c "import json, sys; sys.path.append('tests-e2e'); import load_tester; stats = load_tester.execute(); json.dump(stats, open('load_stats.json', 'w'))"
           cat load_stats.json
 
       - name: Upload Load Stats Results
@@ -110,7 +110,10 @@ jobs:
       - name: Run Selenium E2E Suite against the real page in headless Chrome
         run: |
           cd tests-e2e
-          python -c "import json, sys; import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'test_web.py'], plugins=[c]); print(json.dumps(c.results))" > ../web_e2e_results.json
+          # JSON is written directly to a file via json.dump(), not via a stdout redirect -
+          # pytest's own -v console output (genuinely useful in the Actions log) would
+          # otherwise land in the same stream as the JSON and corrupt it.
+          python -c "import json; import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'test_web.py'], plugins=[c]); json.dump(c.results, open('../web_e2e_results.json', 'w'))"
 
       - name: Upload Web E2E Results
         uses: actions/upload-artifact@v4
@@ -175,7 +178,7 @@ jobs:
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             appium --address 127.0.0.1 --port 4723 > appium_server.log 2>&1 &
             sleep 8
-            cd tests-e2e && python -c "import json, sys; import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'test_mobile.py'], plugins=[c]); print(json.dumps(c.results))" > ../mobile_e2e_results.json
+            cd tests-e2e && python -c "import json; import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'test_mobile.py'], plugins=[c]); json.dump(c.results, open('../mobile_e2e_results.json', 'w'))"
 
       - name: Upload Mobile E2E Results
         uses: actions/upload-artifact@v4

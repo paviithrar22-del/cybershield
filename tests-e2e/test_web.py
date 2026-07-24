@@ -146,10 +146,14 @@ def test_web_uiux_responsive_layout_rendering(browser):
     """Category: UI/UX - Verify the dashboard grid genuinely collapses to a single column under the real 900px breakpoint."""
     load(browser)
     browser.set_window_size(1400, 900)
+    # Headless Chrome doesn't always finish re-laying-out synchronously with set_window_size -
+    # wait on the real window.innerWidth actually reflecting the resize before reading styles.
+    WebDriverWait(browser, 5).until(lambda d: d.execute_script("return window.innerWidth") >= 1300)
     wide_cols = browser.execute_script(
         "return getComputedStyle(document.querySelector('.dashboard-grid')).gridTemplateColumns;"
     )
     browser.set_window_size(500, 900)
+    WebDriverWait(browser, 5).until(lambda d: d.execute_script("return window.innerWidth") <= 600)
     narrow_cols = browser.execute_script(
         "return getComputedStyle(document.querySelector('.dashboard-grid')).gridTemplateColumns;"
     )

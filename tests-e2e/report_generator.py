@@ -60,8 +60,11 @@ def generate_excel_report(test_results, output_path="cybershield_test_analysis.x
     border_all = Border(left=thin_border_side, right=thin_border_side, top=thin_border_side, bottom=thin_border_side)
     thick_bottom = Border(bottom=Side(border_style="medium", color="1F2937"))
     
-    # Convert list to DataFrame for aggregations
-    df = pd.DataFrame(test_results)
+    # Convert list to DataFrame for aggregations. An empty list (e.g. no real device/emulator
+    # was available to run mobile tests against) produces a DataFrame with no columns at all,
+    # so the expected columns are declared explicitly to keep the rest of this function honest
+    # about reporting zero real results instead of crashing.
+    df = pd.DataFrame(test_results, columns=["id", "name", "platform", "category", "status", "duration", "error"])
     
     # ----------------------------------------------------
     # SHEET 1: DASHBOARD
