@@ -175,8 +175,7 @@ jobs:
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             appium --address 127.0.0.1 --port 4723 > appium_server.log 2>&1 &
             sleep 8
-            cd tests-e2e
-            python -c "import json, sys; import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'test_mobile.py'], plugins=[c]); print(json.dumps(c.results))" > ../mobile_e2e_results.json
+            cd tests-e2e && python -c "import json, sys; import pytest; from run_tests import ResultCollectorPlugin; c = ResultCollectorPlugin(); pytest.main(['-v', 'test_mobile.py'], plugins=[c]); print(json.dumps(c.results))" > ../mobile_e2e_results.json
 
       - name: Upload Mobile E2E Results
         uses: actions/upload-artifact@v4
