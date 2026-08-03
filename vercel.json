@@ -1,7 +1,4 @@
 {
-  "version": 2,
-  "name": "cybershield-web",
-  "public": true,
   "cleanUrls": true,
   "headers": [
     {
