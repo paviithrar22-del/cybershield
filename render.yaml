@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: cybershield-web
+    env: static
+    buildCommand: ""
+    staticPublishPath: ./

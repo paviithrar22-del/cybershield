@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "name": "cybershield-web",
+  "public": true,
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ]
+}

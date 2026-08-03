@@ -41,7 +41,7 @@ class SupabaseManager private constructor() {
 
     companion object {
         private const val SUPABASE_URL = "https://rkzrhiwxbypqfttoczzj.supabase.co"
-        private const val SUPABASE_ANON_KEY = "sb_publishable_Gk6mjuBLJAwNejBarnDzSw_zT2ITHy5"
+        private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrenJoaXd4YnlwcWZ0dG9jenpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzEwNDAsImV4cCI6MjA5NzIwNzA0MH0.0OY_Zh1z92e8F6ZnWZMk2EnCWWr4z61Z-mozxt_D8Sk"
 
         @Volatile
         private var instance: SupabaseManager? = null

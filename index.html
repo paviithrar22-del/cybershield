@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberShield — Real-Time Bullying Protection & AI Engine</title>
+    <meta name="description" content="Smart local protection from cyberbullying, harassment, hate speech, and physical threats for children and guardians connected to Supabase Cloud AI.">
+    <!-- Supabase JS SDK CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Global Web Header -->
+    <header class="global-header">
+        <div class="brand-title">
+            <div class="brand-icon-small">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <span class="brand-text-sm">CyberShield Web</span>
+        </div>
+
+        <div class="header-status-group">
+            <div class="header-status-pill" id="supabaseCloudPill">
+                <div class="header-status-dot"></div>
+                <span id="supabaseStatusText">Supabase Connected</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Web Container -->
+    <main class="main-wrapper">
+        <div class="app-container">
+            <!-- Screen Host -->
+            <div class="screen-host">
+                <!-- 1. SPLASH SCREEN -->
+                <section class="screen active" id="screen-splash">
+                    <div class="splash-container">
+                        <div class="splash-logo-glow">
+                            <div class="splash-logo-icon">
+                                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8s0 0 0 0z"/></svg>
+                            </div>
+                        </div>
+                        <h1 class="splash-title">CyberShield</h1>
+                        <p class="splash-subtitle">Supabase Cloud AI & Harassment Protection Platform</p>
+                        <div class="splash-spinner"></div>
+                    </div>
+                </section>
+
+                <!-- 2. WELCOME SCREEN -->
+                <section class="screen" id="screen-welcome">
+                    <div class="welcome-container">
+                        <div class="brand-section">
+                            <div class="splash-logo-icon" style="width:72px; height:72px; margin-bottom:14px;">
+                                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            </div>
+                            <h2 style="font-size:26px; font-weight:800; color:var(--light-text);">Welcome to CyberShield</h2>
+                            <p style="font-size:13px; color:var(--muted-text); margin-top:4px;">Smart local & cloud AI protection from harassment & threats</p>
+                        </div>
+
+                        <div class="features-list">
+                            <div class="feature-row">
+                                <div class="feature-icon-box">
+                                    <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                                </div>
+                                <div class="feature-text">
+                                    <h4>Real-time Notification Interception</h4>
+                                    <p>Monitors incoming notification streams on social & messaging apps automatically.</p>
+                                </div>
+                            </div>
+                            <div class="feature-row">
+                                <div class="feature-icon-box">
+                                    <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>
+                                </div>
+                                <div class="feature-text">
+                                    <h4>Supabase Gemini AI Edge Functions</h4>
+                                    <p>Analyzes messages via Gemini Flash AI Edge Functions with local NLP fallback.</p>
+                                </div>
+                            </div>
+                            <div class="feature-row">
+                                <div class="feature-icon-box">
+                                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </div>
+                                <div class="feature-text">
+                                    <h4>Automated Guardian Emergency Alerts</h4>
+                                    <p>Dispatches instant emergency warnings directly to parent or guardian phone numbers.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; flex-direction:column; gap:12px;">
+                            <button class="btn-primary" onclick="showScreen('login')">SECURE ACCESS (LOG IN)</button>
+                            <button class="btn-outlined" onclick="showScreen('register')">CREATE ACCOUNT (SIGN UP)</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. LOGIN SCREEN -->
+                <section class="screen" id="screen-login">
+                    <div class="auth-container">
+                        <div class="auth-header">
+                            <div class="splash-logo-icon" style="width:60px; height:60px; margin:0 auto 14px;">
+                                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>
+                            </div>
+                            <h2 style="font-size:24px; font-weight:800;">Welcome Back</h2>
+                            <p style="font-size:13px; color:var(--muted-text);">Log in via Supabase Auth</p>
+                        </div>
+
+                        <div class="auth-alert" id="loginErrorAlert"></div>
+
+                        <div class="auth-form">
+                            <div class="input-field">
+                                <label>Email Address</label>
+                                <div class="input-wrapper">
+                                    <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                                    <input type="email" id="loginEmail" placeholder="user@cybershield.com" onkeydown="if(event.key==='Enter') handleSignIn()">
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label>Password</label>
+                                <div class="input-wrapper">
+                                    <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z"/></svg>
+                                    <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter') handleSignIn()">
+                                </div>
+                            </div>
+                            <a class="auth-link" onclick="showScreen('welcome')">Forgot Password?</a>
+                            <button class="btn-primary" style="margin-top:8px;" onclick="handleSignIn()">SIGN IN WITH SUPABASE</button>
+                            <p style="font-size:13px; color:var(--muted-text); text-align:center;">Don't have an account? <a class="auth-link" onclick="showScreen('register')">Sign Up</a></p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. REGISTER SCREEN -->
+                <section class="screen" id="screen-register">
+                    <div class="auth-container">
+                        <div class="auth-header">
+                            <h2 style="font-size:24px; font-weight:800;">Create Supabase Account</h2>
+                            <p style="font-size:13px; color:var(--muted-text);">Protect your child with AI-driven monitoring</p>
+                        </div>
+
+                        <div class="auth-alert" id="registerErrorAlert"></div>
+
+                        <div class="auth-form">
+                            <div class="input-field">
+                                <label>Full Name</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="regName" placeholder="John Doe">
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label>Email Address</label>
+                                <div class="input-wrapper">
+                                    <input type="email" id="regEmail" placeholder="user@cybershield.com">
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label>Password</label>
+                                <div class="input-wrapper">
+                                    <input type="password" id="regPassword" placeholder="••••••••">
+                                </div>
+                            </div>
+                            <button class="btn-primary" style="margin-top:12px;" onclick="handleSignUp()">REGISTER ACCOUNT</button>
+                            <p style="font-size:13px; color:var(--muted-text); text-align:center;">Already registered? <a class="auth-link" onclick="showScreen('login')">Log In</a></p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. MAIN DASHBOARD SCREEN -->
+                <section class="screen" id="screen-main">
+                    <div class="app-main-layout">
+                        <!-- Dashboard Top Bar -->
+                        <div class="app-header">
+                            <div class="app-title-group">
+                                <h2>Protection Dashboard</h2>
+                                <p>Logged in as: <span id="userAccountEmail" style="color:var(--cyan-accent); font-weight:700;">user@cybershield.com</span></p>
+                            </div>
+                            <button class="btn-outlined" style="width:auto; padding:0 18px; height:40px; font-size:12px;" onclick="handleSignOut()">SIGN OUT</button>
+                        </div>
+
+                        <!-- Web Tab Navigation -->
+                        <nav class="web-tab-nav">
+                            <div class="nav-item active" id="nav-home" onclick="switchTab('home')">
+                                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                                <span>Home Overview</span>
+                            </div>
+                            <div class="nav-item" id="nav-feed" onclick="switchTab('feed')">
+                                <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                                <span>Incidents Feed</span>
+                            </div>
+                            <div class="nav-item" id="nav-sandbox" onclick="switchTab('sandbox')">
+                                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                                <span>AI Analysis Sandbox</span>
+                            </div>
+                            <div class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+                                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                                <span>Guardian Settings</span>
+                            </div>
+                        </nav>
+
+                        <!-- Tab 1: Home Overview -->
+                        <div class="tab-page active" id="tab-home">
+                            <div class="home-tab-grid">
+                                <div class="dashboard-card">
+                                    <h3 style="font-size:16px; font-weight:700;">Live Protection Metrics</h3>
+                                    <div class="stats-grid">
+                                        <div class="stat-box">
+                                            <div class="stat-number" id="statScanned">0</div>
+                                            <div class="stat-label">Notifications Scanned</div>
+                                        </div>
+                                        <div class="stat-box">
+                                            <div class="stat-number" id="statFlagged" style="color:var(--rose-accent);">0</div>
+                                            <div class="stat-label">Incidents Flagged</div>
+                                        </div>
+                                    </div>
+                                    <div class="radar-box">
+                                        <div class="radar-circle">
+                                            <svg width="36" height="36" fill="var(--cyan-accent)" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                                        </div>
+                                        <div style="font-size:13px; font-weight:800; color:var(--cyan-accent); letter-spacing:1px;">ACTIVE SCANNING</div>
+                                    </div>
+                                </div>
+
+                                <div class="dashboard-card">
+                                    <h3 style="font-size:16px; font-weight:700;">Notification Simulator</h3>
+                                    <div style="display:flex; flex-direction:column; gap:12px;">
+                                        <div class="input-field">
+                                            <label>Sender Name</label>
+                                            <div class="input-wrapper">
+                                                <input type="text" id="simSender" value="Alex Rivera">
+                                            </div>
+                                        </div>
+                                        <div class="input-field">
+                                            <label>App Name</label>
+                                            <div class="input-wrapper">
+                                                <input type="text" id="simApp" value="Instagram">
+                                            </div>
+                                        </div>
+                                        <div class="input-field">
+                                            <label>Incoming Message Payload</label>
+                                            <div class="input-wrapper" style="height:auto; padding:10px 16px;">
+                                                <textarea id="simMessage" style="width:100%; background:transparent; border:none; color:white; outline:none; font-size:13px; resize:none;" rows="3" placeholder="Type a message to test local & Gemini AI classification..."></textarea>
+                                            </div>
+                                        </div>
+                                        <button class="btn-primary" style="height:44px;" onclick="simulateNotification()">SIMULATE INCOMING NOTIFICATION</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dashboard-card">
+                                <h3 style="font-size:15px; font-weight:700; color:var(--muted-text);">Real-time System Audit Console</h3>
+                                <div class="terminal-log" id="terminalLog"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Incidents Feed -->
+                        <div class="tab-page" id="tab-feed">
+                            <div class="dashboard-card">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <h3 style="font-size:18px; font-weight:800;">Flagged Incidents Stream</h3>
+                                </div>
+                                <div class="incident-scroll-list" id="incidentFeed" style="display:flex; flex-direction:column; gap:12px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: AI Sandbox -->
+                        <div class="tab-page" id="tab-sandbox">
+                            <div class="dashboard-card">
+                                <h3 style="font-size:18px; font-weight:800;">Supabase AI Edge Function Testing Sandbox</h3>
+                                <p style="font-size:13px; color:var(--muted-text);">Test any multi-lingual phrase directly against Supabase Cloud AI Edge Functions with local NLP fallback.</p>
+                                <div class="input-wrapper" style="height:auto; padding:12px 16px; margin-top:8px;">
+                                    <textarea id="sandboxInput" style="width:100%; background:transparent; border:none; color:white; outline:none; font-size:14px; resize:none;" rows="3" placeholder="Type sample message in English, Hindi, Tamil, Telugu, etc..."></textarea>
+                                </div>
+                                <button class="btn-primary" style="height:46px;" onclick="runSandboxAnalysis()">ANALYZE MESSAGE VIA AI EDGE</button>
+
+                                <div class="chip-bar" style="margin-top:12px;">
+                                    <span class="chip" onclick="setSandboxSample('I hate you, you are worthless!')">English Insult</span>
+                                    <span class="chip" onclick="setSandboxSample('dei loosu, poittu saavu waste fellow')">Tamil Threat</span>
+                                    <span class="chip" onclick="setSandboxSample('chup kar chutiya, tere se kuch nahi hoga!')">Hindi Slur</span>
+                                    <span class="chip" onclick="setSandboxSample('Hey, are we still meeting for lunch?')">Safe Sample</span>
+                                </div>
+
+                                <div class="dashboard-card" id="sandboxOutput" style="display:none; background:rgba(15,23,42,0.8); margin-top:12px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <span style="font-weight:700;">Classification Result:</span>
+                                        <span id="sandboxSev" class="badge-sev"></span>
+                                    </div>
+                                    <div style="font-size:13px; color:var(--light-text); margin-top:4px;" id="sandboxReason"></div>
+                                    <div style="font-size:12px; color:var(--muted-text); margin-top:4px;">Flagged: <strong id="sandboxFlagged"></strong></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 4: Guardian Settings -->
+                        <div class="tab-page" id="tab-settings">
+                            <div class="dashboard-card">
+                                <h3 style="font-size:18px; font-weight:800;">Emergency Contact & Sensitivity Controls</h3>
+                                <div style="display:flex; flex-direction:column; gap:16px; margin-top:10px;">
+                                    <div class="input-field">
+                                        <label>Guardian Name</label>
+                                        <div class="input-wrapper">
+                                            <input type="text" id="guardName" value="Guardian Parent">
+                                        </div>
+                                    </div>
+                                    <div class="input-field">
+                                        <label>Emergency Phone Number (SMS Alerts)</label>
+                                        <div class="input-wrapper">
+                                            <input type="text" id="guardPhone" value="+1 (555) 019-2834">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Incident Detail Modal -->
+    <div class="modal-overlay" id="incidentModal">
+        <div class="modal-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-size:18px; font-weight:800;" id="modalSender">Incident Details</h3>
+                <button style="background:none; border:none; color:var(--muted-text); font-size:20px; cursor:pointer;" onclick="closeModal()">✕</button>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span id="modalApp" style="font-size:12px; color:var(--muted-text);"></span>
+                <span id="modalSeverity" class="badge-sev"></span>
+            </div>
+            <div class="msg-bubble" id="modalMessage"></div>
+            <div class="reason-tag" id="modalReason"></div>
+            <button class="btn-primary" style="height:44px;" onclick="closeModal()">CLOSE DETAILS</button>
+        </div>
+    </div>
+
+    <!-- Application Script Engine -->
+    <script src="app.js"></script>
+</body>
+</html>

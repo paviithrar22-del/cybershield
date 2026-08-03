@@ -15,7 +15,7 @@ import statistics
 # are kept well under that so a single test run doesn't consume the whole day's quota by
 # itself - raise them only once billing is enabled on that Google Cloud project.
 SUPABASE_URL = "https://rkzrhiwxbypqfttoczzj.supabase.co"
-SUPABASE_ANON_KEY = "sb_publishable_Gk6mjuBLJAwNejBarnDzSw_zT2ITHy5"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrenJoaXd4YnlwcWZ0dG9jenpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzEwNDAsImV4cCI6MjA5NzIwNzA0MH0.0OY_Zh1z92e8F6ZnWZMk2EnCWWr4z61Z-mozxt_D8Sk"
 CLASSIFY_ENDPOINT = f"{SUPABASE_URL}/functions/v1/classify-message"
 
 SAMPLE_MESSAGES = [
