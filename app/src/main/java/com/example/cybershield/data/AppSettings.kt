@@ -53,13 +53,33 @@ class AppSettings private constructor(context: Context) {
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
 
-    private val sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
-        PREFS_NAME,
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val sharedPreferences: SharedPreferences = createEncryptedPrefs(context)
+
+    // The Keystore-held AES key that decrypts this file can never itself be restored by
+    // backup/restore (it's hardware-bound), but the encrypted XML file can be - e.g. via
+    // OEM device-clone tools even with allowBackup="false". If the file on disk doesn't
+    // match the key we currently hold, every read throws instead of returning data, which
+    // would crash the whole app on first launch. Wipe and recreate rather than crash.
+    private fun createEncryptedPrefs(context: Context): SharedPreferences {
+        return try {
+            EncryptedSharedPreferences.create(
+                context,
+                PREFS_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
+            EncryptedSharedPreferences.create(
+                context,
+                PREFS_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        }
+    }
 
     // Flow for real-time stats updates
     private val _totalScannedFlow = MutableStateFlow(totalScanned)
@@ -156,7 +176,24 @@ class AppSettings private constructor(context: Context) {
     }
 
     fun clearAll() {
-        sharedPreferences.edit().clear().apply()
+        // Do NOT call sharedPreferences.edit().clear() here: EncryptedSharedPreferences
+        // stores its own Tink keyset entries in this same file, and wiping everything
+        // deletes those too, corrupting the file ("Could not decrypt key" on next read).
+        // Remove only the keys this class owns instead.
+        sharedPreferences.edit()
+            .remove(KEY_SENSITIVITY)
+            .remove(KEY_GUARDIAN_NAME)
+            .remove(KEY_GUARDIAN_PHONE)
+            .remove(KEY_GUARDIAN_EMAIL)
+            .remove(KEY_MONITORED_APPS)
+            .remove(KEY_USE_GEMINI)
+            .remove(KEY_GEMINI_API_KEY)
+            .remove(KEY_CUSTOM_KEYWORDS)
+            .remove(KEY_THEME_MODE)
+            .remove(KEY_TOTAL_SCANNED)
+            .remove(KEY_TOTAL_FLAGGED)
+            .remove(KEY_SETUP_COMPLETED)
+            .apply()
         _totalScannedFlow.value = 0
         _totalFlaggedFlow.value = 0
     }

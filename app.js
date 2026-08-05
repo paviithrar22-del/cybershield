@@ -452,9 +452,7 @@ setInterval(() => {
     if (AppState.currentScreen === "main" && AppState.currentTab === "home") {
         const apps = ["WhatsApp", "Instagram", "Snapchat", "Telegram", "SMS"];
         const randomApp = apps[Math.floor(Math.random() * apps.length)];
-        pushTerminalLog(`Intercepted ${randomApp} payload... Safe (NONE)`);
-        AppState.stats.scanned++;
-        updateStatsCounters();
+        pushTerminalLog(`Active protection monitoring ${randomApp}...`);
     }
 }, 4500);
 
