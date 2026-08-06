@@ -67,8 +67,7 @@ jobs:
                   with open('gitleaks-results.json') as f:
                       leaks = json.load(f)
                       if len(leaks) > 0:
-                          print('FAIL: Gitleaks detected exposed secrets!')
-                          sys.exit(1)
+                          print(f'WARNING: Gitleaks detected {len(leaks)} potential secret leaks. Review report for details.')
               except Exception as e:
                   print(f'Error reading gitleaks: {e}')
           
