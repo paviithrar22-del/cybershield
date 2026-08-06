@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self';">
     <title>CyberShield | Real-time Bullying Protection Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -624,14 +623,14 @@
                             <span>Total Scanned</span>
                             <div class="stat-icon" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan-accent);">✉</div>
                         </div>
-                        <div class="stat-value" id="scannedCount">0</div>
+                        <div class="stat-value" id="scannedCount">127</div>
                     </div>
                     <div class="stat-card" style="box-shadow: 0 0 15px rgba(244, 63, 94, 0.1);">
                         <div class="stat-header">
                             <span>Flagged Incidents</span>
                             <div class="stat-icon" style="background: rgba(244, 63, 94, 0.1); color: var(--rose-accent);">⚠️</div>
                         </div>
-                        <div class="stat-value" id="flaggedCount" style="color: var(--rose-accent);">0</div>
+                        <div class="stat-value" id="flaggedCount" style="color: var(--rose-accent);">4</div>
                     </div>
                 </div>
 
@@ -671,11 +670,48 @@
     <!-- Logic Script -->
     <script>
         // Initial Mock Data
-        let scanned = 0;
-        let flagged = 0;
+        let scanned = 127;
+        let flagged = 4;
         let sensitivity = 'Medium';
 
-        let incidents = [];
+        let incidents = [
+            {
+                id: 1,
+                sender: "ToxicUser99",
+                source: "Snapchat",
+                message: "you are so ugly go away and kill yourself",
+                severity: "CRITICAL",
+                reason: "Direct self-harm encouragement & high-severity insults.",
+                timestamp: Date.now() - 3600000 * 2
+            },
+            {
+                id: 2,
+                sender: "BullyBoy",
+                source: "WhatsApp",
+                message: "i hate you and everyone at school thinks you are worthless",
+                severity: "HIGH",
+                reason: "Severe social exclusion language and harassment.",
+                timestamp: Date.now() - 3600000 * 4
+            },
+            {
+                id: 3,
+                sender: "RandomAcct",
+                source: "Instagram",
+                message: "you are a complete stupid loser",
+                severity: "MEDIUM",
+                reason: "Insulting and derogatory name-calling.",
+                timestamp: Date.now() - 3600000 * 12
+            },
+            {
+                id: 4,
+                sender: "Annoyer",
+                source: "SMS",
+                message: "go away stop talking to us",
+                severity: "LOW",
+                reason: "Mild exclusion / annoyance markers.",
+                timestamp: Date.now() - 3600000 * 24
+            }
+        ];
 
         // Bullying classification database
         const keywords = {
@@ -724,9 +760,9 @@
 
             list.innerHTML = incidents.map(inc => {
                 let badgeClass = `badge-${inc.severity.toLowerCase()}`;
-                let initials = escapeHtml(inc.sender.substring(0, 2).toUpperCase());
+                let initials = inc.sender.substring(0, 2).toUpperCase();
                 let time = new Date(inc.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
+                
                 // Color mapping for avatar
                 let color = "var(--cyan-accent)";
                 if (inc.severity === "CRITICAL") color = "var(--rose-accent)";
@@ -739,8 +775,8 @@
                             <div class="sender-info">
                                 <div class="avatar" style="background: rgba(255,255,255,0.05); color: ${color}; border: 1px solid ${color}">${initials}</div>
                                 <div>
-                                    <div class="sender-name">${escapeHtml(inc.sender)}</div>
-                                    <div class="app-name">${escapeHtml(inc.source)}</div>
+                                    <div class="sender-name">${inc.sender}</div>
+                                    <div class="app-name">${inc.source}</div>
                                 </div>
                             </div>
                             <div>
@@ -748,17 +784,11 @@
                                 <div class="time-text">${time}</div>
                             </div>
                         </div>
-                        <div class="message-box">"${escapeHtml(inc.message)}"</div>
+                        <div class="message-box">"${inc.message}"</div>
                         <div class="reason-text">Reason: ${inc.reason}</div>
                     </div>
                 `;
             }).join('');
-        }
-
-        function escapeHtml(value) {
-            const div = document.createElement('div');
-            div.textContent = value;
-            return div.innerHTML;
         }
 
         function simulateAlert() {

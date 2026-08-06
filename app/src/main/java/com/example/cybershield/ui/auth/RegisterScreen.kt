@@ -31,7 +31,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.cybershield.data.AppSettings
-import com.example.cybershield.data.IncidentDatabaseHelper
 import com.example.cybershield.data.SupabaseManager
 import com.example.cybershield.ui.main.CyanAccent
 import com.example.cybershield.ui.main.DarkBg
@@ -302,16 +301,11 @@ fun RegisterScreen(
                                                 put("phone", phoneTrim)
                                             }
                                         }
-                                        // New accounts share this device's local stats/incident storage
-                                        // with any previous account, so wipe it on registration.
-                                        AppSettings.getInstance(context).resetStats()
-                                        IncidentDatabaseHelper.getInstance(context).clearAllIncidents()
-
+                                        AppSettings.getInstance(context).guardianName = nameTrim
                                         Toast.makeText(context, "Registration successful! Verification email sent.", Toast.LENGTH_LONG).show()
                                         onLoginClick()
                                     } catch (e: Exception) {
-                                        android.util.Log.e("CyberShield", "Registration failed", e)
-                                        Toast.makeText(context, "Error: ${e.localizedMessage ?: e.message ?: e.toString()}", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(context, "Error: ${e.localizedMessage ?: e.message}", Toast.LENGTH_LONG).show()
                                     } finally {
                                         isLoading = false
                                     }

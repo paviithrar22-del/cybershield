@@ -16,33 +16,3 @@ local.properties
 /keystore.properties
 *.jks
 
-# Python caches and virtual environments
-__pycache__/
-*.py[cod]
-*$py.class
-.pytest_cache/
-.venv/
-venv/
-ENV/
-
-# Supabase temp directories
-supabase/.temp/
-
-# Kotlin compiler directories
-.kotlin/
-
-# E2E Reports and JSON outputs
-**/website/*.xlsx
-**/mobile/report/
-**/backend/*.xlsx
-**/load_testing/
-**/e2e_results.json
-**/web_e2e_results.json
-**/mobile_e2e_results.json
-**/security_results.json
-**/load_stats.json
-**/summary_dashboard.md
-**/cybershield_test_analysis.xlsx
-**/window_dump*.xml
-**/mobile_full_run*.log
-

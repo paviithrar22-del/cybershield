@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CyberShield E2E Automation Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark-bg: #0b0f19;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --cyan-accent: #06b6d4;
+            --purple-accent: #8b5cf6;
+            --rose-accent: #f43f5e;
+            --light-text: #f8fafc;
+            --muted-text: #94a3b8;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            padding: 30px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+        .value-pass { color: var(--cyan-accent); }
+        .value-fail { color: var(--rose-accent); }
+        .value-total { color: var(--purple-accent); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CyberShield QA Execution Dashboard</h1>
+        <div>Latest Build Execution Report</div>
+    </div>
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div>Total Test Cases</div>
+            <div class="metric-value value-total">420</div>
+        </div>
+        <div class="metric-card">
+            <div>Passed</div>
+            <div class="metric-value value-pass">407</div>
+        </div>
+        <div class="metric-card">
+            <div>Failed</div>
+            <div class="metric-value value-fail">10</div>
+        </div>
+        <div class="metric-card">
+            <div>Pass Percentage</div>
+            <div class="metric-value" style="color:#22c55e;">96.90%</div>
+        </div>
+    </div>
+</body>
+</html>

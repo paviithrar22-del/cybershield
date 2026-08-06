@@ -32,7 +32,7 @@ data class RemoteIncident(
 )
 
 @Serializable
-data class EdgeRequest(val text: String)
+data class EdgeRequest(val text: String, val sensitivity: String)
 
 @Serializable
 data class EdgeResponse(val severity: String, val reason: String)
@@ -41,7 +41,7 @@ class SupabaseManager private constructor() {
 
     companion object {
         private const val SUPABASE_URL = "https://rkzrhiwxbypqfttoczzj.supabase.co"
-        private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJrenJoaXd4YnlwcWZ0dG9jenpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzEwNDAsImV4cCI6MjA5NzIwNzA0MH0.0OY_Zh1z92e8F6ZnWZMk2EnCWWr4z61Z-mozxt_D8Sk"
+        private const val SUPABASE_ANON_KEY = "sb_publishable_Gk6mjuBLJAwNejBarnDzSw_zT2ITHy5"
 
         @Volatile
         private var instance: SupabaseManager? = null
@@ -73,11 +73,11 @@ class SupabaseManager private constructor() {
     val currentUserId: String?
         get() = (client.auth.sessionStatus.value as? io.github.jan.supabase.auth.status.SessionStatus.Authenticated)?.session?.user?.id
 
-    suspend fun classifyWithGeminiEdge(text: String): ClassificationResult {
+    suspend fun classifyWithGeminiEdge(text: String, sensitivity: String = "Medium"): ClassificationResult {
         return try {
             val response = client.functions.invoke(
                 function = "classify-message",
-                body = EdgeRequest(text = text)
+                body = EdgeRequest(text = text, sensitivity = sensitivity)
             )
             val responseText = response.bodyAsText()
             val parsed = Json.decodeFromString<EdgeResponse>(responseText)

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -2042,15 +2041,9 @@ fun SettingsDashboard(viewModel: MainScreenViewModel, onNavigate: (String) -> Un
                 onClick = {
                     scope.launch {
                         try {
-                            // Clear local incident database
-                            com.example.cybershield.data.IncidentDatabaseHelper.getInstance(context).clearAllIncidents()
-                            // Reset and clear local settings and stats
-                            com.example.cybershield.data.AppSettings.getInstance(context).clearAll()
-                            // Perform session sign out
                             com.example.cybershield.data.SupabaseManager.getInstance().signOut()
                             Toast.makeText(context, "Signed out successfully", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
-                            Log.e("CyberShield", "Sign out failed", e)
                             Toast.makeText(context, "Sign out failed: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }

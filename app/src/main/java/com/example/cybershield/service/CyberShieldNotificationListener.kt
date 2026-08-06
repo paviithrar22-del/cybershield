@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.telephony.SmsManager
@@ -48,9 +49,7 @@ class CyberShieldNotificationListener : NotificationListenerService() {
 
         val extras = sbn.notification.extras ?: return
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: "Someone"
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-        val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: ""
-        val content = text.ifEmpty { bigText }
+        val content = extractNotificationText(sbn.notification)
 
         if (content.isEmpty()) {
             return
@@ -66,12 +65,9 @@ class CyberShieldNotificationListener : NotificationListenerService() {
 
         // Classify and handle result in background scope
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-            val apiKey = com.example.cybershield.nlp.GeminiClassifier.API_KEY
-            val result = if (apiKey.isNotBlank() && apiKey != "YOUR_API_KEY_HERE") {
-                com.example.cybershield.nlp.GeminiClassifier.classify(content, apiKey)
-            } else {
-                com.example.cybershield.data.SupabaseManager.getInstance().classifyWithGeminiEdge(content)
-            }
+            val sensitivity = appSettings.sensitivity
+            val customKeywords = appSettings.customKeywords
+            val result = com.example.cybershield.nlp.BullyingClassifier.classify(content, sensitivity, customKeywords)
 
             if (result.isFlagged) {
                 // Increment flagged count
@@ -105,6 +101,50 @@ class CyberShieldNotificationListener : NotificationListenerService() {
                 }
             }
         }
+    }
+
+    private fun extractNotificationText(notification: Notification): String {
+        val extras = notification.extras ?: return ""
+        
+        // 1. Try to extract from MessagingStyle historical/active messages
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val messages = extras.get(Notification.EXTRA_MESSAGES) as? Array<*>
+            if (messages != null && messages.isNotEmpty()) {
+                val sb = StringBuilder()
+                for (msgObj in messages) {
+                    if (msgObj is Bundle) {
+                        val text = msgObj.getCharSequence("text")?.toString() ?: ""
+                        if (text.isNotEmpty()) {
+                            if (sb.isNotEmpty()) sb.append("\n")
+                            sb.append(text)
+                        }
+                    }
+                }
+                if (sb.isNotEmpty()) {
+                    return sb.toString()
+                }
+            }
+        }
+
+        // 2. Try EXTRA_TEXT_LINES (InboxStyle)
+        val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+        if (textLines != null && textLines.isNotEmpty()) {
+            val sb = StringBuilder()
+            for (line in textLines) {
+                if (!line.isNullOrEmpty()) {
+                    if (sb.isNotEmpty()) sb.append("\n")
+                    sb.append(line.toString())
+                }
+            }
+            if (sb.isNotEmpty()) {
+                return sb.toString()
+            }
+        }
+
+        // 3. Fallback to standard texts
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+        val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: ""
+        return text.ifEmpty { bigText }
     }
 
     private fun getAppName(packageName: String): String {

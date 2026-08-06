@@ -95,19 +95,6 @@ class ResultCollectorPlugin:
                 "error": error_log
             })
 
-            # Print in the user-requested Appium log format
-            import datetime
-            import sys
-            timestamp = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-            tc_num = len(self.results)
-            tc_id = f"TC-{tc_num}"
-            duration_ms = int(report.duration * 1000)
-            actual_detail = f"/{test_id}"
-            
-            sys.stdout.write(f"[{timestamp}] Running: {tc_id} - {test_desc} [{category}]\n")
-            sys.stdout.write(f"[{timestamp}] Result: {tc_id} -> {status} ({duration_ms}ms). Actual: {actual_detail}\n")
-            sys.stdout.flush()
-
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="CyberShield E2E Test Suite Runner")
@@ -117,7 +104,7 @@ def main():
     args, unknown = parser.parse_known_args()
     
     print("\n" + "="*50)
-    print("      CYBERSHIELD AUTOMATION TEST RUNNER      ")
+    print("    CYBERSHIELD WEB SELENIUM AUTOMATION RUNNER   ")
     print("="*50)
     print(f"Mode: {'DRY-RUN (Mock Drivers)' if args.dry_run else 'LIVE (WebDrivers)'}")
     print("="*50 + "\n")
@@ -148,18 +135,34 @@ def main():
     passed_tests = len([r for r in results if r["status"] == "PASS"])
     failed_tests = len([r for r in results if r["status"] == "FAIL"])
     skipped_tests = len([r for r in results if r["status"] == "SKIP"])
-    duration = sum(r["duration"] for r in results)
     
-    # Matching the requested log format
-    print(f"Suite Execution Finished. Duration: {duration:.2f}s. Passed: {passed_tests}/{total_tests} ({passed_tests/total_tests*100:.2f}%)")
-    print("Writing reports...")
-    output_xlsx = "cybershield_test_analysis.xlsx"
-    print(f"Excel report generated: {os.path.abspath(output_xlsx)}")
-    print(f"Reports written to: {os.path.dirname(os.path.abspath(output_xlsx))}")
-    print(f"Pass rate: {passed_tests/total_tests*100:.2f}% ({passed_tests}/{total_tests})")
+    print("\n" + "="*50)
+    print("               TEST RUN SUMMARY               ")
+    print("="*50)
+    print(f"Total Scanned: {total_tests}")
+    print(f"Passed:        {passed_tests}")
+    print(f"Failed:        {failed_tests}")
+    print(f"Skipped:       {skipped_tests}")
+    print(f"Pass Rate:     {(passed_tests/total_tests*100):.1f}%")
+    print("="*50)
     
     # Generate report
+    output_xlsx = "cybershield_web_analysis.xlsx"
+    print(f"\nGenerating styled Excel Report analysis...")
     generate_excel_report(results, output_xlsx)
+    
+    # Save CSV version of report
+    import csv
+    output_csv = "cybershield_web_analysis.csv"
+    with open(output_csv, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["id", "name", "platform", "category", "status", "duration", "error"])
+        writer.writeheader()
+        writer.writerows(results)
+    
+    print(f"\n[SUCCESS] E2E testing completed! Reports saved in: ")
+    print(f" -> Excel: {os.path.abspath(output_xlsx)}")
+    print(f" -> CSV:   {os.path.abspath(output_csv)}")
+    print("="*50 + "\n")
     
     sys.exit(exit_code)
 

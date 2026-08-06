@@ -55,4 +55,29 @@ class BullyingClassifierTest {
         val highSensResult = BullyingClassifier.classify("You idiot", "High")
         assertTrue(highSensResult.severity.ordinal >= mediumSensResult.severity.ordinal)
     }
+
+    @Test
+    fun testTextChunking() {
+        // Safe chunk and a bad chunk
+        val message = "Hello. You stupid idiot. Hope you are well."
+        val result = BullyingClassifier.classify(message, "Medium")
+        assertTrue(result.isFlagged)
+        assertTrue(result.reason.contains("Harassment/Insults"))
+    }
+
+    @Test
+    fun testCustomKeywordsSingleWord() {
+        val customKeywords = setOf("targetword")
+        val result = BullyingClassifier.classify("This is a message containing targetword.", "Medium", customKeywords)
+        assertTrue(result.isFlagged)
+        assertTrue(result.reason.contains("Custom Keywords: targetword"))
+    }
+
+    @Test
+    fun testCustomKeywordsPhrase() {
+        val customKeywords = setOf("bad intent phrase")
+        val result = BullyingClassifier.classify("Please do bad intent phrase here.", "Medium", customKeywords)
+        assertTrue(result.isFlagged)
+        assertTrue(result.reason.contains("Custom Keywords: bad intent phrase"))
+    }
 }

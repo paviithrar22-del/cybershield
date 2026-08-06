@@ -1,0 +1,122 @@
+name: Deploy Web Dashboard and Run Selenium Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Run daily at midnight
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Build Web Application
+        run: |
+          mkdir -p build-web
+          cp cybershield_demo.html build-web/index.html
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'build-web'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+
+  selenium-testing:
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium pandas openpyxl pytest pytest-html
+
+      - name: Verify Live Deployment HTTP 200
+        run: |
+          python -c "
+          import urllib.request
+          url = '${{ needs.build-and-deploy.outputs.page_url }}'
+          print(f'Verifying deployment status of {url}...')
+          try:
+              res = urllib.request.urlopen(url)
+              if res.getcode() == 200:
+                  print('Deployment successfully verified (HTTP 200)!')
+              else:
+                  raise Exception(f'Non-200 code returned: {res.getcode()}')
+          except Exception as e:
+              print(f'Verification failed: {e}')
+              exit(1)
+          "
+
+      - name: Generate E2E Test Case Spreadsheet
+        run: |
+          python generate_reports.py --generate-all
+
+      - name: Execute Selenium E2E Web Tests
+        env:
+          BASE_URL: ${{ needs.build-and-deploy.outputs.page_url }}
+          CYBERSHIELD_EMAIL: ${{ secrets.CYBERSHIELD_EMAIL }}
+          CYBERSHIELD_PASSWORD: ${{ secrets.CYBERSHIELD_PASSWORD }}
+        run: |
+          pytest automation/tests/ --html=Test-Results/HTML/execution-report.html --self-contained-html || true
+
+      - name: Copy Reports for Pages Deployment
+        run: |
+          mkdir -p build-web/reports/latest
+          cp Test-Results/HTML/execution-report.html build-web/reports/latest/execution-report.html || true
+          cp Test-Results/HTML/dashboard.html build-web/reports/latest/dashboard.html || true
+          cp Test-Results/Summary/summary_web.md build-web/reports/latest/summary.md || true
+          mkdir -p build-web/reports/latest/screenshots
+          cp -r Test-Results/Screenshots/* build-web/reports/latest/screenshots/ || true
+          mkdir -p build-web/reports/latest/logs
+          cp -r Test-Results/Logs/* build-web/reports/latest/logs/ || true
+
+      - name: Upload Test Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-test-results
+          path: |
+            Test-Results/
+          retention-days: 30
+
+      - name: Generate Action Run Summary
+        if: always()
+        run: |
+          cat Test-Results/Summary/summary_web.md >> $GITHUB_STEP_SUMMARY

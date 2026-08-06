@@ -1,0 +1,78 @@
+name: Android Appium E2E Automation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Run daily at midnight
+
+jobs:
+  android-e2e:
+    runs-on: macos-13 # Required for hardware acceleration for Android emulator
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Android App (Debug APK)
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Install Node.js & Appium
+        run: |
+          brew install node
+          npm install -g appium
+          appium driver install uiautomator2
+
+      - name: Run E2E Tests on Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          script: |
+            # Start Appium in background
+            appium --log appium.log &
+            
+            # Wait for Appium server to start
+            sleep 10
+            
+            # Setup python testing packages
+            python3 -m pip install pytest pytest-html appium-python-client pandas openpyxl
+            
+            # Run the spreadsheet generator to populate test lists
+            python3 generate_reports.py --generate-all
+            
+            # Execute mobile test suite
+            pytest tests-appium/ --html=Test-Results/HTML/execution-report.html --self-contained-html || true
+            
+            # Copy Mobile Excel files to match artifact expectations
+            cp Test-Results/Excel/Automation_Test_Report_Mobile.xlsx Test-Results/Excel/Automation_Test_Report.xlsx
+            cp Test-Results/Excel/Passed_Test_Cases_Mobile.xlsx Test-Results/Excel/Passed_Test_Cases.xlsx
+            cp Test-Results/Excel/Failed_Test_Cases_Mobile.xlsx Test-Results/Excel/Failed_Test_Cases.xlsx
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appium-test-results
+          path: |
+            Test-Results/
+          retention-days: 30
+
+      - name: Generate Action Summary
+        if: always()
+        run: |
+          cat Test-Results/Summary/summary_mobile.md >> $GITHUB_STEP_SUMMARY
